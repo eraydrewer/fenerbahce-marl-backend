@@ -5,10 +5,39 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { Pool } = require("pg");
+const multer = require("multer");
+const { v2: cloudinary } = require("cloudinary");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error("Nur JPG, PNG oder WEBP erlaubt."));
+    }
+
+    cb(null, true);
+  }
+});
 
 
 /* =========================================
@@ -216,6 +245,66 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
   });
 
 });
+
+/* =========================================
+   BILD HOCHLADEN
+   Nur Vorstand
+========================================= */
+
+app.post(
+  "/api/upload",
+  requireAuth,
+  upload.single("image"),
+  async (req, res) => {
+
+    try {
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Kein Bild ausgewählt."
+        });
+      }
+
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "fenerbahce-marl/news",
+          resource_type: "image"
+        },
+        (error, result) => {
+
+          if (error) {
+
+            console.error(error);
+
+            return res.status(500).json({
+              error: "Bild konnte nicht hochgeladen werden."
+            });
+
+          }
+
+          res.json({
+            success: true,
+            image_url: result.secure_url,
+            public_id: result.public_id
+          });
+
+        }
+      );
+
+      uploadStream.end(req.file.buffer);
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Bild konnte nicht hochgeladen werden."
+      });
+
+    }
+
+  }
+);
 
 
 /* =========================================
