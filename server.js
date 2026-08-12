@@ -87,13 +87,24 @@ async function initDatabase() {
       title VARCHAR(200) NOT NULL,
       text TEXT NOT NULL,
       image_url TEXT,
+      image_position_x INTEGER DEFAULT 50,
+      image_position_y INTEGER DEFAULT 50,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
 
-  console.log("News-Datenbank bereit.");
+  await pool.query(`
+    ALTER TABLE news
+    ADD COLUMN IF NOT EXISTS image_position_x INTEGER DEFAULT 50;
+  `);
 
+  await pool.query(`
+    ALTER TABLE news
+    ADD COLUMN IF NOT EXISTS image_position_y INTEGER DEFAULT 50;
+  `);
+
+  console.log("News-Datenbank bereit.");
 }
 
 
@@ -318,12 +329,14 @@ app.get("/api/news", async (req, res) => {
 
     const result = await pool.query(`
       SELECT
-        id,
-        title,
-        text,
-        image_url,
-        created_at,
-        updated_at
+  id,
+  title,
+  text,
+  image_url,
+  image_position_x,
+  image_position_y,
+  created_at,
+  updated_at
       FROM news
       ORDER BY created_at DESC
     `);
@@ -355,13 +368,15 @@ app.get("/api/news/:id", async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT
-        id,
-        title,
-        text,
-        image_url,
-        created_at,
-        updated_at
+       SELECT
+  id,
+  title,
+  text,
+  image_url,
+  image_position_x,
+  image_position_y,
+  created_at,
+  updated_at
       FROM news
       WHERE id = $1
       `,
@@ -405,7 +420,9 @@ app.post("/api/news", requireAuth, async (req, res) => {
     const {
       title,
       text,
-      image_url
+      image_url,
+      image_position_x,
+      image_position_y
     } = req.body;
 
 
@@ -418,20 +435,45 @@ app.post("/api/news", requireAuth, async (req, res) => {
     }
 
 
+    const positionX = Math.max(
+  0,
+  Math.min(
+    100,
+    Number.isFinite(Number(image_position_x))
+      ? Number(image_position_x)
+      : 50
+  )
+);
+
+const positionY = Math.max(
+  0,
+  Math.min(
+    100,
+    Number.isFinite(Number(image_position_y))
+      ? Number(image_position_y)
+      : 50
+  )
+);
+
+
     const result = await pool.query(
       `
       INSERT INTO news (
         title,
         text,
-        image_url
+        image_url,
+        image_position_x,
+        image_position_y
       )
-      VALUES ($1, $2, $3)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
       `,
       [
         title.trim(),
         text.trim(),
-        image_url || null
+        image_url || null,
+        positionX,
+        positionY
       ]
     );
 
@@ -466,7 +508,9 @@ app.put("/api/news/:id", requireAuth, async (req, res) => {
     const {
       title,
       text,
-      image_url
+      image_url,
+      image_position_x,
+      image_position_y
     } = req.body;
 
 
@@ -479,6 +523,27 @@ app.put("/api/news/:id", requireAuth, async (req, res) => {
     }
 
 
+    const positionX = Math.max(
+  0,
+  Math.min(
+    100,
+    Number.isFinite(Number(image_position_x))
+      ? Number(image_position_x)
+      : 50
+  )
+);
+
+const positionY = Math.max(
+  0,
+  Math.min(
+    100,
+    Number.isFinite(Number(image_position_y))
+      ? Number(image_position_y)
+      : 50
+  )
+);
+
+
     const result = await pool.query(
       `
       UPDATE news
@@ -486,14 +551,18 @@ app.put("/api/news/:id", requireAuth, async (req, res) => {
         title = $1,
         text = $2,
         image_url = $3,
+        image_position_x = $4,
+        image_position_y = $5,
         updated_at = NOW()
-      WHERE id = $4
+      WHERE id = $6
       RETURNING *
       `,
       [
         title.trim(),
         text.trim(),
         image_url || null,
+        positionX,
+        positionY,
         req.params.id
       ]
     );
