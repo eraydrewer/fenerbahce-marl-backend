@@ -435,24 +435,22 @@ app.post("/api/news", requireAuth, async (req, res) => {
     }
 
 
-    const positionX = Math.max(
-  0,
-  Math.min(
-    100,
-    Number.isFinite(Number(image_position_x))
-      ? Number(image_position_x)
-      : 50
-  )
+    const rawPositionX =
+  Number.isFinite(Number(image_position_x))
+    ? Number(image_position_x)
+    : 50;
+
+const rawPositionY =
+  Number.isFinite(Number(image_position_y))
+    ? Number(image_position_y)
+    : 50;
+
+const positionX = Math.round(
+  Math.max(0, Math.min(100, rawPositionX))
 );
 
-const positionY = Math.max(
-  0,
-  Math.min(
-    100,
-    Number.isFinite(Number(image_position_y))
-      ? Number(image_position_y)
-      : 50
-  )
+const positionY = Math.round(
+  Math.max(0, Math.min(100, rawPositionY))
 );
 
 
@@ -523,24 +521,22 @@ app.put("/api/news/:id", requireAuth, async (req, res) => {
     }
 
 
-    const positionX = Math.max(
-  0,
-  Math.min(
-    100,
-    Number.isFinite(Number(image_position_x))
-      ? Number(image_position_x)
-      : 50
-  )
+    const rawPositionX =
+  Number.isFinite(Number(image_position_x))
+    ? Number(image_position_x)
+    : 50;
+
+const rawPositionY =
+  Number.isFinite(Number(image_position_y))
+    ? Number(image_position_y)
+    : 50;
+
+const positionX = Math.round(
+  Math.max(0, Math.min(100, rawPositionX))
 );
 
-const positionY = Math.max(
-  0,
-  Math.min(
-    100,
-    Number.isFinite(Number(image_position_y))
-      ? Number(image_position_y)
-      : 50
-  )
+const positionY = Math.round(
+  Math.max(0, Math.min(100, rawPositionY))
 );
 
 
