@@ -708,8 +708,8 @@ app.post("/api/contact", async (req, res) => {
             "Fenerbahçe Marl <onboarding@resend.dev>",
 
           to: [
-            "erayo2001@hotmail.com"
-          ],
+  "vorstand@fenerbahce-marl.de"
+],
 
           subject:
             `Kontaktformular: ${cleanSubject}`,
