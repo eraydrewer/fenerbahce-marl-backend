@@ -635,6 +635,144 @@ app.delete("/api/news/:id", requireAuth, async (req, res) => {
 
 });
 
+/* =========================================
+   KONTAKTFORMULAR
+========================================= */
+
+app.post("/api/contact", async (req, res) => {
+
+  try {
+
+    const {
+      name,
+      email,
+      subject,
+      message
+    } = req.body;
+
+
+    if (!name || !email || !subject || !message) {
+
+      return res.status(400).json({
+        error: "Bitte alle Felder ausfüllen."
+      });
+
+    }
+
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    if (!emailRegex.test(email)) {
+
+      return res.status(400).json({
+        error: "Bitte eine gültige E-Mail-Adresse eingeben."
+      });
+
+    }
+
+
+    const cleanName =
+      String(name).trim().slice(0, 100);
+
+    const cleanEmail =
+      String(email).trim().slice(0, 200);
+
+    const cleanSubject =
+      String(subject).trim().slice(0, 200);
+
+    const cleanMessage =
+      String(message).trim().slice(0, 5000);
+
+
+    const resendResponse = await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization":
+            `Bearer ${process.env.RESEND_API_KEY}`,
+
+          "Content-Type":
+            "application/json",
+
+          "User-Agent":
+            "Fenerbahce-Marl-Website/1.0"
+        },
+
+        body: JSON.stringify({
+
+          from:
+            "Fenerbahçe Marl <onboarding@resend.dev>",
+
+          to: [
+            "erayo2001@hotmail.com"
+          ],
+
+          subject:
+            `Kontaktformular: ${cleanSubject}`,
+
+          text:
+`Neue Nachricht über die Website von Fenerbahçe Marl
+
+Name:
+${cleanName}
+
+E-Mail:
+${cleanEmail}
+
+Betreff:
+${cleanSubject}
+
+Nachricht:
+${cleanMessage}`
+
+        })
+
+      }
+    );
+
+
+    const data =
+      await resendResponse.json();
+
+
+    if (!resendResponse.ok) {
+
+      console.error(
+        "Resend Fehler:",
+        data
+      );
+
+      return res.status(500).json({
+        error: "E-Mail konnte nicht gesendet werden."
+      });
+
+    }
+
+
+    res.json({
+      success: true,
+      message: "Nachricht wurde gesendet."
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Kontaktformular Fehler:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Nachricht konnte nicht gesendet werden."
+    });
+
+  }
+
+});
 
 /* =========================================
    SERVER START
