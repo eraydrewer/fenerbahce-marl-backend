@@ -705,14 +705,16 @@ app.post("/api/contact", async (req, res) => {
         body: JSON.stringify({
 
           from:
-            "Fenerbahçe Marl <onboarding@resend.dev>",
+  "Fenerbahçe Marl <website@fenerbahce-marl.de>",
 
-          to: [
+to: [
   "vorstand@fenerbahce-marl.de"
 ],
 
-          subject:
-            `Kontaktformular: ${cleanSubject}`,
+reply_to: cleanEmail,
+
+subject:
+  `Kontaktformular: ${cleanSubject}`,
 
           text:
 `Neue Nachricht über die Website von Fenerbahçe Marl
