@@ -538,6 +538,136 @@ app.put(
 );
 
 /* =========================================
+   MANNSCHAFTSBILD HOCHLADEN
+   Nur Vorstand
+========================================= */
+
+app.post(
+  "/api/teams/:slug/image",
+  requireAuth,
+  upload.single("image"),
+  async (req, res) => {
+
+    try {
+
+      if (!req.file) {
+
+        return res.status(400).json({
+          error: "Kein Mannschaftsbild ausgewählt."
+        });
+
+      }
+
+
+      const teamResult = await pool.query(
+        `
+        SELECT
+          id,
+          image_public_id
+        FROM teams
+        WHERE slug = $1
+        `,
+        [req.params.slug]
+      );
+
+
+      if (teamResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Mannschaft nicht gefunden."
+        });
+
+      }
+
+
+      const team = teamResult.rows[0];
+
+
+      const uploadResult = await new Promise(
+        (resolve, reject) => {
+
+          const uploadStream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder: "fenerbahce-marl/teams",
+                resource_type: "image"
+              },
+              (error, result) => {
+
+                if (error) {
+                  reject(error);
+                  return;
+                }
+
+                resolve(result);
+
+              }
+            );
+
+          uploadStream.end(req.file.buffer);
+
+        }
+      );
+
+
+      await pool.query(
+        `
+        UPDATE teams
+        SET
+          image_url = $1,
+          image_public_id = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        `,
+        [
+          uploadResult.secure_url,
+          uploadResult.public_id,
+          team.id
+        ]
+      );
+
+
+      if (team.image_public_id) {
+
+        try {
+
+          await cloudinary.uploader.destroy(
+            team.image_public_id
+          );
+
+        } catch (deleteError) {
+
+          console.error(
+            "Altes Mannschaftsbild konnte nicht gelöscht werden:",
+            deleteError
+          );
+
+        }
+
+      }
+
+
+      res.json({
+        success: true,
+        image_url: uploadResult.secure_url,
+        public_id: uploadResult.public_id
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Mannschaftsbild konnte nicht gespeichert werden."
+      });
+
+    }
+
+  }
+);
+
+/* =========================================
    BILD HOCHLADEN
    Nur Vorstand
 ========================================= */
