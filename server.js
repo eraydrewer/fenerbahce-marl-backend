@@ -81,6 +81,10 @@ const pool = new Pool({
 
 async function initDatabase() {
 
+  /* =========================================
+     NEWS
+  ========================================= */
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS news (
       id SERIAL PRIMARY KEY,
@@ -104,7 +108,67 @@ async function initDatabase() {
     ADD COLUMN IF NOT EXISTS image_position_y INTEGER DEFAULT 50;
   `);
 
-  console.log("News-Datenbank bereit.");
+
+  /* =========================================
+     MANNSCHAFTEN
+  ========================================= */
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS teams (
+      id SERIAL PRIMARY KEY,
+      slug VARCHAR(50) UNIQUE NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      image_url TEXT,
+      image_public_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+
+  /* =========================================
+     SPIELER
+  ========================================= */
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS players (
+      id SERIAL PRIMARY KEY,
+      team_id INTEGER NOT NULL
+        REFERENCES teams(id)
+        ON DELETE CASCADE,
+
+      shirt_number VARCHAR(10),
+      name VARCHAR(150) NOT NULL,
+
+      position_group VARCHAR(50),
+      position VARCHAR(100),
+
+      sort_order INTEGER DEFAULT 0,
+
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+
+  /* =========================================
+     3 MANNSCHAFTEN AUTOMATISCH ANLEGEN
+  ========================================= */
+
+  await pool.query(`
+    INSERT INTO teams (
+      slug,
+      name
+    )
+    VALUES
+      ('erste-mannschaft', '1. Mannschaft'),
+      ('zweite-mannschaft', '2. Mannschaft'),
+      ('dritte-mannschaft', '3. Mannschaft')
+    ON CONFLICT (slug) DO NOTHING;
+  `);
+
+
+  console.log("News- und Team-Datenbank bereit.");
 }
 
 
