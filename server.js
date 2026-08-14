@@ -322,6 +322,222 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
 });
 
 /* =========================================
+   MANNSCHAFT LADEN
+   Öffentlich
+========================================= */
+
+app.get("/api/teams/:slug", async (req, res) => {
+
+  try {
+
+    const teamResult = await pool.query(
+      `
+      SELECT
+        id,
+        slug,
+        name,
+        image_url
+      FROM teams
+      WHERE slug = $1
+      `,
+      [req.params.slug]
+    );
+
+
+    if (teamResult.rows.length === 0) {
+
+      return res.status(404).json({
+        error: "Mannschaft nicht gefunden."
+      });
+
+    }
+
+
+    const team = teamResult.rows[0];
+
+
+    const playersResult = await pool.query(
+      `
+      SELECT
+        id,
+        shirt_number,
+        name,
+        position_group,
+        position,
+        sort_order
+      FROM players
+      WHERE team_id = $1
+      ORDER BY
+        CASE position_group
+          WHEN 'Torwart' THEN 1
+          WHEN 'Abwehr' THEN 2
+          WHEN 'Mittelfeld' THEN 3
+          WHEN 'Sturm' THEN 4
+          ELSE 5
+        END,
+        sort_order ASC,
+        id ASC
+      `,
+      [team.id]
+    );
+
+
+    res.json({
+      ...team,
+      players: playersResult.rows
+    });
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Mannschaft konnte nicht geladen werden."
+    });
+
+  }
+
+});
+
+
+/* =========================================
+   SPIELER SPEICHERN
+   Nur Vorstand
+========================================= */
+
+app.put(
+  "/api/teams/:slug/players",
+  requireAuth,
+  async (req, res) => {
+
+    const client = await pool.connect();
+
+    try {
+
+      const players = req.body.players;
+
+
+      if (!Array.isArray(players)) {
+
+        return res.status(400).json({
+          error: "Spielerliste fehlt."
+        });
+
+      }
+
+
+      const teamResult = await client.query(
+        `
+        SELECT id
+        FROM teams
+        WHERE slug = $1
+        `,
+        [req.params.slug]
+      );
+
+
+      if (teamResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Mannschaft nicht gefunden."
+        });
+
+      }
+
+
+      const teamId = teamResult.rows[0].id;
+
+
+      await client.query("BEGIN");
+
+
+      await client.query(
+        `
+        DELETE FROM players
+        WHERE team_id = $1
+        `,
+        [teamId]
+      );
+
+
+      for (let i = 0; i < players.length; i++) {
+
+        const player = players[i];
+
+
+        const name =
+          String(player.name || "").trim();
+
+        const shirtNumber =
+          String(player.shirt_number || "").trim();
+
+        const positionGroup =
+          String(player.position_group || "").trim();
+
+        const position =
+          String(player.position || "").trim();
+
+
+        if (!name) {
+          continue;
+        }
+
+
+        await client.query(
+          `
+          INSERT INTO players (
+            team_id,
+            shirt_number,
+            name,
+            position_group,
+            position,
+            sort_order
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+          `,
+          [
+            teamId,
+            shirtNumber || null,
+            name,
+            positionGroup || null,
+            position || null,
+            i
+          ]
+        );
+
+      }
+
+
+      await client.query("COMMIT");
+
+
+      res.json({
+        success: true
+      });
+
+
+    } catch (error) {
+
+      await client.query("ROLLBACK");
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Spieler konnten nicht gespeichert werden."
+      });
+
+
+    } finally {
+
+      client.release();
+
+    }
+
+  }
+);
+
+/* =========================================
    BILD HOCHLADEN
    Nur Vorstand
 ========================================= */
