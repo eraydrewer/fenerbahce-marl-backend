@@ -93,6 +93,7 @@ async function initDatabase() {
       image_url TEXT,
       image_position_x INTEGER DEFAULT 50,
       image_position_y INTEGER DEFAULT 50,
+      is_top BOOLEAN NOT NULL DEFAULT FALSE,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
@@ -107,6 +108,11 @@ async function initDatabase() {
     ALTER TABLE news
     ADD COLUMN IF NOT EXISTS image_position_y INTEGER DEFAULT 50;
   `);
+
+  await pool.query(`
+  ALTER TABLE news
+  ADD COLUMN IF NOT EXISTS is_top BOOLEAN NOT NULL DEFAULT FALSE;
+`);
 
 
   /* =========================================
@@ -739,16 +745,19 @@ app.get("/api/news", async (req, res) => {
 
     const result = await pool.query(`
       SELECT
-  id,
-  title,
-  text,
-  image_url,
-  image_position_x,
-  image_position_y,
-  created_at,
-  updated_at
+        id,
+        title,
+        text,
+        image_url,
+        image_position_x,
+        image_position_y,
+        is_top,
+        created_at,
+        updated_at
       FROM news
-      ORDER BY created_at DESC
+      ORDER BY
+        is_top DESC,
+        created_at DESC
     `);
 
 
@@ -785,10 +794,11 @@ app.get("/api/news/:id", async (req, res) => {
   image_url,
   image_position_x,
   image_position_y,
+  is_top,
   created_at,
   updated_at
-      FROM news
-      WHERE id = $1
+FROM news
+WHERE id = $1
       `,
       [req.params.id]
     );
@@ -832,7 +842,8 @@ app.post("/api/news", requireAuth, async (req, res) => {
       text,
       image_url,
       image_position_x,
-      image_position_y
+      image_position_y,
+      is_top
     } = req.body;
 
 
@@ -862,6 +873,20 @@ const positionX = Math.round(
 const positionY = Math.round(
   Math.max(0, Math.min(100, rawPositionY))
 );
+
+    const isTop =
+  is_top === true ||
+  is_top === "true";
+
+if (isTop) {
+
+  await pool.query(`
+    UPDATE news
+    SET is_top = FALSE
+    WHERE is_top = TRUE
+  `);
+
+}
 
 
     const result = await pool.query(
