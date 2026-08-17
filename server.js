@@ -941,13 +941,13 @@ app.put("/api/news/:id", requireAuth, async (req, res) => {
   try {
 
     const {
-      title,
-      text,
-      image_url,
-      image_position_x,
-      image_position_y
-    } = req.body;
-
+  title,
+  text,
+  image_url,
+  image_position_x,
+  image_position_y,
+  is_top
+} = req.body;
 
     if (!title || !text) {
 
@@ -976,29 +976,50 @@ const positionY = Math.round(
   Math.max(0, Math.min(100, rawPositionY))
 );
 
+    const isTop =
+  is_top === true ||
+  is_top === "true";
+
+if (isTop) {
+
+  await pool.query(
+    `
+    UPDATE news
+    SET is_top = FALSE
+    WHERE
+      is_top = TRUE
+      AND id <> $1
+    `,
+    [req.params.id]
+  );
+
+}
+
 
     const result = await pool.query(
-      `
-      UPDATE news
-      SET
-        title = $1,
-        text = $2,
-        image_url = $3,
-        image_position_x = $4,
-        image_position_y = $5,
-        updated_at = NOW()
-      WHERE id = $6
-      RETURNING *
-      `,
-      [
-        title.trim(),
-        text.trim(),
-        image_url || null,
-        positionX,
-        positionY,
-        req.params.id
-      ]
-    );
+  `
+  UPDATE news
+  SET
+    title = $1,
+    text = $2,
+    image_url = $3,
+    image_position_x = $4,
+    image_position_y = $5,
+    is_top = $6,
+    updated_at = NOW()
+  WHERE id = $7
+  RETURNING *
+  `,
+  [
+    title.trim(),
+    text.trim(),
+    image_url || null,
+    positionX,
+    positionY,
+    isTop,
+    req.params.id
+  ]
+);
 
 
     if (result.rows.length === 0) {
