@@ -890,25 +890,27 @@ if (isTop) {
 
 
     const result = await pool.query(
-      `
-      INSERT INTO news (
-        title,
-        text,
-        image_url,
-        image_position_x,
-        image_position_y
-      )
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-      `,
-      [
-        title.trim(),
-        text.trim(),
-        image_url || null,
-        positionX,
-        positionY
-      ]
-    );
+  `
+  INSERT INTO news (
+    title,
+    text,
+    image_url,
+    image_position_x,
+    image_position_y,
+    is_top
+  )
+  VALUES ($1, $2, $3, $4, $5, $6)
+  RETURNING *
+  `,
+  [
+    title.trim(),
+    text.trim(),
+    image_url || null,
+    positionX,
+    positionY,
+    isTop
+  ]
+);
 
 
     res.status(201).json({
