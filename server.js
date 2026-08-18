@@ -156,6 +156,20 @@ async function initDatabase() {
     );
   `);
 
+    /* =========================================
+     SPONSOREN
+  ========================================= */
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sponsors (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      image_url TEXT,
+      image_public_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
 
   /* =========================================
      3 MANNSCHAFTEN AUTOMATISCH ANLEGEN
