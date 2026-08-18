@@ -646,6 +646,80 @@ app.get("/api/teams/:slug", async (req, res) => {
 
 });
 
+/* =========================================
+   TRAINERTEAM SPEICHERN
+   Nur Vorstand
+========================================= */
+
+app.put(
+  "/api/teams/:slug/trainers",
+  requireAuth,
+  async (req, res) => {
+
+    try {
+
+      const trainerName =
+        String(req.body.trainer_name || "").trim();
+
+      const coTrainerName =
+        String(req.body.co_trainer_name || "").trim();
+
+      const betreuerName =
+        String(req.body.betreuer_name || "").trim();
+
+
+      const result = await pool.query(
+        `
+          UPDATE teams
+          SET
+            trainer_name = $1,
+            co_trainer_name = $2,
+            betreuer_name = $3,
+            updated_at = NOW()
+          WHERE slug = $4
+          RETURNING
+            slug,
+            trainer_name,
+            co_trainer_name,
+            betreuer_name
+        `,
+        [
+          trainerName || null,
+          coTrainerName || null,
+          betreuerName || null,
+          req.params.slug
+        ]
+      );
+
+
+      if (result.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Mannschaft nicht gefunden."
+        });
+
+      }
+
+
+      res.json({
+        success: true,
+        team: result.rows[0]
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Trainerteam konnte nicht gespeichert werden."
+      });
+
+    }
+
+  }
+);
+
 
 /* =========================================
    SPIELER SPEICHERN
