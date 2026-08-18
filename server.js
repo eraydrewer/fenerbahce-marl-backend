@@ -342,6 +342,39 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
 });
 
 /* =========================================
+   SPONSOREN LADEN
+   Öffentlich
+========================================= */
+
+app.get("/api/sponsors", async (req, res) => {
+
+  try {
+
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        image_url,
+        created_at
+      FROM sponsors
+      ORDER BY created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Sponsoren konnten nicht geladen werden."
+    });
+
+  }
+
+});
+
+/* =========================================
    MANNSCHAFT LADEN
    Öffentlich
 ========================================= */
