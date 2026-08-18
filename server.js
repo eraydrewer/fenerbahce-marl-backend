@@ -348,6 +348,97 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
 
 app.get("/api/sponsors", async (req, res) => {
 
+  /* =========================================
+   SPONSOR HINZUFÜGEN
+   Nur Vorstand
+========================================= */
+
+app.post(
+  "/api/sponsors",
+  requireAuth,
+  upload.single("image"),
+  async (req, res) => {
+
+    try {
+
+      const name =
+        String(req.body.name || "").trim();
+
+      if (!name) {
+        return res.status(400).json({
+          error: "Bitte Sponsorname eingeben."
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Bitte Sponsor-Logo auswählen."
+        });
+      }
+
+
+      const uploadResult =
+        await new Promise((resolve, reject) => {
+
+          const uploadStream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder: "fenerbahce-marl/sponsors",
+                resource_type: "image"
+              },
+              (error, result) => {
+
+                if (error) {
+                  reject(error);
+                  return;
+                }
+
+                resolve(result);
+              }
+            );
+
+          uploadStream.end(req.file.buffer);
+
+        });
+
+
+      const result = await pool.query(
+        `
+          INSERT INTO sponsors (
+            name,
+            image_url,
+            image_public_id
+          )
+          VALUES ($1, $2, $3)
+          RETURNING *
+        `,
+        [
+          name,
+          uploadResult.secure_url,
+          uploadResult.public_id
+        ]
+      );
+
+
+      res.status(201).json({
+        success: true,
+        sponsor: result.rows[0]
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Sponsor konnte nicht hinzugefügt werden."
+      });
+
+    }
+
+  }
+);
+
   try {
 
     const result = await pool.query(`
