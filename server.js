@@ -579,11 +579,14 @@ app.get("/api/teams/:slug", async (req, res) => {
     const teamResult = await pool.query(
       `
       SELECT
-        id,
-        slug,
-        name,
-        image_url
-      FROM teams
+  id,
+  slug,
+  name,
+  image_url,
+  trainer_name,
+  co_trainer_name,
+  betreuer_name
+FROM teams
       WHERE slug = $1
       `,
       [req.params.slug]
