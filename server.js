@@ -171,50 +171,7 @@ async function initDatabase() {
     );
   `);
 
-    /* =========================================
-     VORHANDENE SPONSOREN EINMALIG ÜBERNEHMEN
-  ========================================= */
-
-  await pool.query(`
-    INSERT INTO sponsors (
-      name,
-      image_url,
-      image_public_id
-    )
-
-    SELECT
-      sponsor.name,
-      sponsor.image_url,
-      NULL
-
-    FROM (
-      VALUES
-        ('AKCA GaLaBau', 'https://fenerbahce-marl.de/akca-galabau.png'),
-        ('Automobile Marl', 'https://fenerbahce-marl.de/automobile-marl.jpg'),
-        ('Ayca Geflügel', 'https://fenerbahce-marl.de/ayca.jpg'),
-        ('Lackiererei Cankaya', 'https://fenerbahce-marl.de/cankaya.png'),
-        ('Ceylan', 'https://fenerbahce-marl.de/ceylan.png'),
-        ('Elmoba', 'https://fenerbahce-marl.de/elmoba.png'),
-        ('Ermiş Fleischerei', 'https://fenerbahce-marl.de/ermis-fleisch.jpg'),
-        ('IB Autohaus Marl', 'https://fenerbahce-marl.de/ib-autohaus-marl.png'),
-        ('MES Autoglas', 'https://fenerbahce-marl.de/mes-autoglas-banner.jpg'),
-        ('Mr. Kebap', 'https://fenerbahce-marl.de/mr-kebap-werbung.jpg'),
-        ('MSAlkan Betreuungsdienst', 'https://fenerbahce-marl.de/msalkan.png'),
-        ('Sezer''s Döner', 'https://fenerbahce-marl.de/sezer-doener.png'),
-        ('Star Tankstelle Marl', 'https://fenerbahce-marl.de/star-tankstelle-banner.png'),
-        ('Cabuk Vermittlungsservice', 'https://fenerbahce-marl.de/taha-cabuk-neu.png'),
-        ('Vestfinanz', 'https://fenerbahce-marl.de/vestfinanz.png'),
-        ('Vodafone Shop Marl', 'https://fenerbahce-marl.de/vodafone-marl.png')
-    ) AS sponsor(name, image_url)
-
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM sponsors
-      WHERE sponsors.name = sponsor.name
-    );
-  `);
-
-  /* =========================================
+/* =========================================
      3 MANNSCHAFTEN AUTOMATISCH ANLEGEN
   ========================================= */
 
