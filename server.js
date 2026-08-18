@@ -131,6 +131,21 @@ async function initDatabase() {
     );
   `);
 
+  await pool.query(`
+  ALTER TABLE teams
+  ADD COLUMN IF NOT EXISTS trainer_name VARCHAR(150);
+`);
+
+await pool.query(`
+  ALTER TABLE teams
+  ADD COLUMN IF NOT EXISTS co_trainer_name VARCHAR(150);
+`);
+
+await pool.query(`
+  ALTER TABLE teams
+  ADD COLUMN IF NOT EXISTS betreuer_name VARCHAR(150);
+`);
+
 
   /* =========================================
      SPIELER
