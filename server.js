@@ -465,6 +465,93 @@ app.post(
 
   }
 );
+
+/* =========================================
+   SPONSOR LÖSCHEN
+   Nur Vorstand
+========================================= */
+
+app.delete(
+  "/api/sponsors/:id",
+  requireAuth,
+  async (req, res) => {
+
+    try {
+
+      const sponsorId =
+        Number(req.params.id);
+
+      if (!Number.isInteger(sponsorId)) {
+
+        return res.status(400).json({
+          error: "Ungültige Sponsor-ID."
+        });
+
+      }
+
+
+      const sponsorResult =
+        await pool.query(
+          `
+            SELECT
+              id,
+              image_public_id
+            FROM sponsors
+            WHERE id = $1
+          `,
+          [sponsorId]
+        );
+
+
+      if (sponsorResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Sponsor nicht gefunden."
+        });
+
+      }
+
+
+      const sponsor =
+        sponsorResult.rows[0];
+
+
+      if (sponsor.image_public_id) {
+
+        await cloudinary.uploader.destroy(
+          sponsor.image_public_id
+        );
+
+      }
+
+
+      await pool.query(
+        `
+          DELETE FROM sponsors
+          WHERE id = $1
+        `,
+        [sponsorId]
+      );
+
+
+      res.json({
+        success: true
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error: "Sponsor konnte nicht gelöscht werden."
+      });
+
+    }
+
+  }
+);
+
 /* =========================================
    MANNSCHAFT LADEN
    Öffentlich
