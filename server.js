@@ -542,13 +542,13 @@ if (req.file) {
             RETURNING *
           `,
           [
-            name,
-            role,
-            email || null,
-            uploadResult.secure_url,
-            uploadResult.public_id,
-            sortOrder
-          ]
+  name,
+  role,
+  email || null,
+  imageUrl,
+  imagePublicId,
+  sortOrder
+]
         );
 
 
