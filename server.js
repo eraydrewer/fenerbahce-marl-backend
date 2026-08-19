@@ -436,6 +436,133 @@ app.get("/api/board-members", async (req, res) => {
 });
 
 /* =========================================
+   VORSTANDSMITGLIED HINZUFÜGEN
+   Nur Vorstand
+========================================= */
+
+app.post(
+  "/api/board-members",
+  requireAuth,
+  upload.single("image"),
+  async (req, res) => {
+
+    try {
+
+      const name =
+        String(req.body.name || "").trim();
+
+      const role =
+        String(req.body.role || "").trim();
+
+      const email =
+        String(req.body.email || "").trim();
+
+
+      if (!name) {
+        return res.status(400).json({
+          error: "Bitte Namen eingeben."
+        });
+      }
+
+
+      if (!role) {
+        return res.status(400).json({
+          error: "Bitte Position eingeben."
+        });
+      }
+
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Bitte ein Bild auswählen."
+        });
+      }
+
+
+      const uploadResult =
+        await new Promise((resolve, reject) => {
+
+          const uploadStream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder: "fenerbahce-marl/vorstand",
+                resource_type: "image"
+              },
+              (error, result) => {
+
+                if (error) {
+                  reject(error);
+                  return;
+                }
+
+                resolve(result);
+              }
+            );
+
+          uploadStream.end(req.file.buffer);
+
+        });
+
+
+      const orderResult =
+        await pool.query(`
+          SELECT
+            COALESCE(MAX(sort_order), 0) + 1
+            AS next_order
+          FROM board_members
+        `);
+
+
+      const sortOrder =
+        orderResult.rows[0].next_order;
+
+
+      const result =
+        await pool.query(
+          `
+            INSERT INTO board_members (
+              name,
+              role,
+              email,
+              image_url,
+              image_public_id,
+              sort_order
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+          `,
+          [
+            name,
+            role,
+            email || null,
+            uploadResult.secure_url,
+            uploadResult.public_id,
+            sortOrder
+          ]
+        );
+
+
+      res.status(201).json({
+        success: true,
+        member: result.rows[0]
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error:
+          "Vorstandsmitglied konnte nicht hinzugefügt werden."
+      });
+
+    }
+
+  }
+);
+
+/* =========================================
    SPONSOREN LADEN
    Öffentlich
 ========================================= */
