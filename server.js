@@ -401,6 +401,41 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
 });
 
 /* =========================================
+   VORSTAND LADEN
+   Öffentlich
+========================================= */
+
+app.get("/api/board-members", async (req, res) => {
+
+  try {
+
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        role,
+        email,
+        image_url,
+        sort_order
+      FROM board_members
+      ORDER BY sort_order ASC, id ASC
+    `);
+
+    res.json(result.rows);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      error: "Vorstand konnte nicht geladen werden."
+    });
+
+  }
+
+});
+
+/* =========================================
    SPONSOREN LADEN
    Öffentlich
 ========================================= */
