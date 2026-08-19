@@ -186,6 +186,24 @@ await pool.query(`
     );
   `);
 
+  /* =========================================
+   VORSTAND
+========================================= */
+
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS board_members (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    role VARCHAR(150) NOT NULL,
+    email VARCHAR(255),
+    image_url TEXT,
+    image_public_id TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+`);
+
 /* =========================================
      3 MANNSCHAFTEN AUTOMATISCH ANLEGEN
   ========================================= */
