@@ -204,6 +204,32 @@ await pool.query(`
   );
 `);
 
+  await pool.query(`
+  INSERT INTO board_members (
+    name,
+    role,
+    email,
+    image_url,
+    sort_order
+  )
+  SELECT *
+  FROM (
+    VALUES
+      ('Bünyamin Fidan', 'Vorsitzender', NULL, 'vorstand-placeholder.jpg', 1),
+      ('Sadi Akcacik', 'Stellv. Vorsitzender', NULL, 'vorstand-placeholder.jpg', 2),
+      ('Ertugrul Salbas', 'Geschäftsführer', NULL, 'vorstand-placeholder.jpg', 3),
+      ('Yasir Arlat', 'Kassenwart', NULL, 'vorstand-placeholder.jpg', 4),
+      ('Fatih Ayküz', 'Vorstandsmitglied', NULL, 'vorstand-placeholder.jpg', 5),
+      ('Muzaffer Akyüz', 'Vorstandsmitglied', NULL, 'vorstand-placeholder.jpg', 6),
+      ('Sinan Dalli', 'Vorstandsmitglied', NULL, 'vorstand-placeholder.jpg', 7),
+      ('Erhan Keskin', 'Jugendleiter', 'jugend@fenerbahce-marl.de', 'vorstand-placeholder.jpg', 8)
+  ) AS members(name, role, email, image_url, sort_order)
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM board_members
+  );
+`);
+
 /* =========================================
      3 MANNSCHAFTEN AUTOMATISCH ANLEGEN
   ========================================= */
