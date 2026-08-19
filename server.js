@@ -471,29 +471,47 @@ app.post(
         });
       }
 
-        const uploadResult =
-        await new Promise((resolve, reject) => {
+        let imageUrl =
+  "vorstand-placeholder.jpg";
 
-          const uploadStream =
-            cloudinary.uploader.upload_stream(
-              {
-                folder: "fenerbahce-marl/vorstand",
-                resource_type: "image"
-              },
-              (error, result) => {
+let imagePublicId =
+  null;
 
-                if (error) {
-                  reject(error);
-                  return;
-                }
 
-                resolve(result);
-              }
-            );
+if (req.file) {
 
-          uploadStream.end(req.file.buffer);
+  const uploadResult =
+    await new Promise((resolve, reject) => {
 
-        });
+      const uploadStream =
+        cloudinary.uploader.upload_stream(
+          {
+            folder: "fenerbahce-marl/vorstand",
+            resource_type: "image"
+          },
+          (error, result) => {
+
+            if (error) {
+              reject(error);
+              return;
+            }
+
+            resolve(result);
+          }
+        );
+
+      uploadStream.end(req.file.buffer);
+
+    });
+
+
+  imageUrl =
+    uploadResult.secure_url;
+
+  imagePublicId =
+    uploadResult.public_id;
+
+}
 
 
       const orderResult =
