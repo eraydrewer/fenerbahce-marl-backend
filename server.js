@@ -563,6 +563,108 @@ app.post(
 );
 
 /* =========================================
+   VORSTANDSMITGLIED BEARBEITEN
+   Nur Vorstand
+========================================= */
+
+app.put(
+  "/api/board-members/:id",
+  requireAuth,
+  async (req, res) => {
+
+    try {
+
+      const memberId =
+        Number(req.params.id);
+
+      const name =
+        String(req.body.name || "").trim();
+
+      const role =
+        String(req.body.role || "").trim();
+
+      const email =
+        String(req.body.email || "").trim();
+
+
+      if (!Number.isInteger(memberId)) {
+
+        return res.status(400).json({
+          error: "Ungültige Vorstand-ID."
+        });
+
+      }
+
+
+      if (!name) {
+
+        return res.status(400).json({
+          error: "Bitte Namen eingeben."
+        });
+
+      }
+
+
+      if (!role) {
+
+        return res.status(400).json({
+          error: "Bitte Position eingeben."
+        });
+
+      }
+
+
+      const result =
+        await pool.query(
+          `
+            UPDATE board_members
+            SET
+              name = $1,
+              role = $2,
+              email = $3,
+              updated_at = NOW()
+            WHERE id = $4
+            RETURNING *
+          `,
+          [
+            name,
+            role,
+            email || null,
+            memberId
+          ]
+        );
+
+
+      if (result.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Vorstandsmitglied nicht gefunden."
+        });
+
+      }
+
+
+      res.json({
+        success: true,
+        member: result.rows[0]
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error:
+          "Vorstandsmitglied konnte nicht gespeichert werden."
+      });
+
+    }
+
+  }
+);
+
+/* =========================================
    VORSTANDSMITGLIED LÖSCHEN
    Nur Vorstand
 ========================================= */
