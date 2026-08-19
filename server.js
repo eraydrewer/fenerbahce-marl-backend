@@ -665,6 +665,154 @@ app.put(
 );
 
 /* =========================================
+   VORSTANDSBILD ÄNDERN
+   Nur Vorstand
+========================================= */
+
+app.post(
+  "/api/board-members/:id/image",
+  requireAuth,
+  upload.single("image"),
+  async (req, res) => {
+
+    try {
+
+      const memberId =
+        Number(req.params.id);
+
+
+      if (!Number.isInteger(memberId)) {
+
+        return res.status(400).json({
+          error: "Ungültige Vorstand-ID."
+        });
+
+      }
+
+
+      if (!req.file) {
+
+        return res.status(400).json({
+          error: "Bitte ein Bild auswählen."
+        });
+
+      }
+
+
+      const memberResult =
+        await pool.query(
+          `
+            SELECT
+              image_public_id
+            FROM board_members
+            WHERE id = $1
+          `,
+          [memberId]
+        );
+
+
+      if (memberResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Vorstandsmitglied nicht gefunden."
+        });
+
+      }
+
+
+      const oldPublicId =
+        memberResult.rows[0].image_public_id;
+
+
+      const uploadResult =
+        await new Promise((resolve, reject) => {
+
+          const uploadStream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder: "fenerbahce-marl/vorstand",
+                resource_type: "image"
+              },
+              (error, result) => {
+
+                if (error) {
+                  reject(error);
+                  return;
+                }
+
+                resolve(result);
+
+              }
+            );
+
+
+          uploadStream.end(
+            req.file.buffer
+          );
+
+        });
+
+
+      const result =
+        await pool.query(
+          `
+            UPDATE board_members
+            SET
+              image_url = $1,
+              image_public_id = $2,
+              updated_at = NOW()
+            WHERE id = $3
+            RETURNING *
+          `,
+          [
+            uploadResult.secure_url,
+            uploadResult.public_id,
+            memberId
+          ]
+        );
+
+
+      if (oldPublicId) {
+
+        try {
+
+          await cloudinary.uploader.destroy(
+            oldPublicId
+          );
+
+        } catch (error) {
+
+          console.error(
+            "Altes Vorstandsbild konnte nicht gelöscht werden:",
+            error
+          );
+
+        }
+
+      }
+
+
+      res.json({
+        success: true,
+        member: result.rows[0]
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error:
+          "Vorstandsbild konnte nicht gespeichert werden."
+      });
+
+    }
+
+  }
+);
+
+/* =========================================
    VORSTANDSMITGLIED LÖSCHEN
    Nur Vorstand
 ========================================= */
