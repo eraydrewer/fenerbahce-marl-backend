@@ -563,6 +563,94 @@ app.post(
 );
 
 /* =========================================
+   VORSTANDSMITGLIED LÖSCHEN
+   Nur Vorstand
+========================================= */
+
+app.delete(
+  "/api/board-members/:id",
+  requireAuth,
+  async (req, res) => {
+
+    try {
+
+      const memberId =
+        Number(req.params.id);
+
+
+      if (!Number.isInteger(memberId)) {
+
+        return res.status(400).json({
+          error: "Ungültige Vorstand-ID."
+        });
+
+      }
+
+
+      const memberResult =
+        await pool.query(
+          `
+            SELECT
+              id,
+              image_public_id
+            FROM board_members
+            WHERE id = $1
+          `,
+          [memberId]
+        );
+
+
+      if (memberResult.rows.length === 0) {
+
+        return res.status(404).json({
+          error: "Vorstandsmitglied nicht gefunden."
+        });
+
+      }
+
+
+      const member =
+        memberResult.rows[0];
+
+
+      if (member.image_public_id) {
+
+        await cloudinary.uploader.destroy(
+          member.image_public_id
+        );
+
+      }
+
+
+      await pool.query(
+        `
+          DELETE FROM board_members
+          WHERE id = $1
+        `,
+        [memberId]
+      );
+
+
+      res.json({
+        success: true
+      });
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        error:
+          "Vorstandsmitglied konnte nicht gelöscht werden."
+      });
+
+    }
+
+  }
+);
+
+/* =========================================
    SPONSOREN LADEN
    Öffentlich
 ========================================= */
