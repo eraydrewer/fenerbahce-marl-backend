@@ -471,15 +471,7 @@ app.post(
         });
       }
 
-
-      if (!req.file) {
-        return res.status(400).json({
-          error: "Bitte ein Bild auswählen."
-        });
-      }
-
-
-      const uploadResult =
+        const uploadResult =
         await new Promise((resolve, reject) => {
 
           const uploadStream =
